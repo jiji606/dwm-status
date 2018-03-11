@@ -31,6 +31,26 @@ function reset_fifo {
 	mkfifo $STATUS_FIFO
 }
 
+function music_status {
+	if (( $(mpc | wc -l) > 1 )) ; then
+		mpc_current="$(mpc current)"
+		mpc_status="$(mpc | grep -oP "(?<=\[)(\w+)" ) - ${mpc_current}"
+		mpc_position="$(mpc -f %position% | head -n 1)"
+		mpc_playlist="$(mpc playlist | wc -l)"
+	elif (( $(mpc | wc -l) == 1 )) ; then
+		if (( $(mpc playlist | wc -l) == 0 )) ; then
+			mpc_status="playlist empty"
+		elif (( $(mpc playlist | wc -l) > 0 )) ; then
+			if [[ "$mpc_position" == "$mpc_playlist" ]] ; then
+				mpc_status="playlist end"
+			else
+				mpc_status="stopped"
+			fi
+		fi
+	fi
+	echo "$mpc_status"
+}
+
 reset_fifo
 
 check_dependency clock date xsetroot mpc
