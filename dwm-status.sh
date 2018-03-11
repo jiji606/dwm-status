@@ -2,10 +2,15 @@
 
 trap cleanup TERM EXIT QUIT
 
+declare -r BATTERY_PATH="/sys/class/power_supply/BAT0/capacity"
 declare -r STATUS_FIFO="/tmp/status-fifo"
 
+declare -i BATTERY_CHECK_INT=5
+declare -i BATTERY_PID
 declare -i CLOCK_PID
 declare -i MPC_PID
+declare -i VOL_PID
+declare -i VOLUME_CHECK_INT=5
 
 function cleanup {
 	if [[ -e $STATUS_FIFO ]] ; then
@@ -13,6 +18,8 @@ function cleanup {
 	fi
 	kill "$CLOCK_PID"
 	kill "$MPC_PID"
+	kill "$BATTERY_PID"
+	kill "$VOL_PID"
 }
 
 function check_dependency {
@@ -29,6 +36,14 @@ function reset_fifo {
 		rm -f $STATUS_FIFO
 	fi
 	mkfifo $STATUS_FIFO
+}
+
+function battery_check {
+	while true ; do
+		battery_status="b$(cat $BATTERY_PATH)"
+		echo "$battery_status"
+		sleep "$BATTERY_CHECK_INT"
+	done
 }
 
 function music_status {
@@ -57,6 +72,8 @@ check_dependency clock date xsetroot mpc
 
 clock -sf 'S%a %H:%M'      > "$STATUS_FIFO" & CLOCK_PID=$!   ; echo "clock   $CLOCK_PID"
 mpc idleloop player        > "$STATUS_FIFO" & MPC_PID=$!     ; echo "mpc     $MPC_PID"
+stdbuf -oL alsactl monitor > "$STATUS_FIFO" & VOL_PID=$!     ; echo "volume  $VOL_PID"
+battery_check              > "$STATUS_FIFO" & BATTERY_PID=$! ; echo "battery $BATTERY_PID"
 
 while read -r line ; do
 	case $line in
