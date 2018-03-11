@@ -35,8 +35,8 @@ reset_fifo
 
 check_dependency clock date xsetroot mpc
 
-clock -sf 'S%a %H:%M' > "$STATUS_FIFO" & CLOCK_PID=$!
-mpc idleloop player   > "$STATUS_FIFO" & MPC_PID=$!
+clock -sf 'S%a %H:%M'      > "$STATUS_FIFO" & CLOCK_PID=$!   ; echo "clock   $CLOCK_PID"
+mpc idleloop player        > "$STATUS_FIFO" & MPC_PID=$!     ; echo "mpc     $MPC_PID"
 
 cat "$STATUS_FIFO" | while read -r line ; do
 	echo "$line"
