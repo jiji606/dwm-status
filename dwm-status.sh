@@ -4,10 +4,15 @@ trap cleanup TERM EXIT QUIT
 
 declare -r STATUS_FIFO="/tmp/status-fifo"
 
+declare -i CLOCK_PID
+declare -i MPC_PID
+
 function cleanup {
 	if [[ -e $STATUS_FIFO ]] ; then
 		rm -f $STATUS_FIFO
 	fi
+	kill "$CLOCK_PID"
+	kill "$MPC_PID"
 }
 
 function check_dependency {
@@ -29,3 +34,10 @@ function reset_fifo {
 reset_fifo
 
 check_dependency clock date xsetroot mpc
+
+clock -sf 'S%a %H:%M' > "$STATUS_FIFO" & CLOCK_PID=$!
+mpc idleloop player   > "$STATUS_FIFO" & MPC_PID=$!
+
+cat "$STATUS_FIFO" | while read -r line ; do
+	echo "$line"
+done
