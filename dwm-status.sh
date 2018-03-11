@@ -38,6 +38,21 @@ check_dependency clock date xsetroot mpc
 clock -sf 'S%a %H:%M'      > "$STATUS_FIFO" & CLOCK_PID=$!   ; echo "clock   $CLOCK_PID"
 mpc idleloop player        > "$STATUS_FIFO" & MPC_PID=$!     ; echo "mpc     $MPC_PID"
 
-cat "$STATUS_FIFO" | while read -r line ; do
-	echo "$line"
-done
+while read -r line ; do
+	case $line in
+		player*)
+			now_playing=$(music_status)
+			;;
+		card*)
+			volume="$(amixer get Master | grep -oP '\[[0-9]+\%\]' | tr -d '[]%')"
+			volume_fmt="${volume}%"
+			;;
+		b*)
+			battery_fmt="${line#?}%"
+			;;
+		S*)
+			clock_fmt="${line#?}"
+			;;
+	esac
+	xsetroot -name " / $now_playing / vol:$volume_fmt / bat:$battery_fmt / $clock_fmt "
+done < "$STATUS_FIFO"
