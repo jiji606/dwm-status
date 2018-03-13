@@ -46,6 +46,19 @@ function battery_check {
 	done
 }
 
+function get_volume {
+	local volume
+	local is_muted
+
+	is_muted="$(amixer get Master | grep -oP '\[(on|off)\]' | tr -d '[]')"
+	if [[ $is_muted == on ]] ; then
+		volume="$(amixer get Master | grep -oP '\[[0-9]+\%\]' | tr -d '[]%')%"
+	elif [[ $is_muted == off ]] ; then
+		volume="muted"
+	fi
+	echo $volume
+}
+
 function music_status {
 	if (( $(mpc | wc -l) > 1 )) ; then
 		mpc_current="$(mpc current)"
@@ -81,8 +94,7 @@ while read -r line ; do
 			now_playing=$(music_status)
 			;;
 		card*)
-			volume="$(amixer get Master | grep -oP '\[[0-9]+\%\]' | tr -d '[]%')"
-			volume_fmt="${volume}%"
+			volume_fmt=$(get_volume)
 			;;
 		b*)
 			battery_fmt="${line#?}%"
