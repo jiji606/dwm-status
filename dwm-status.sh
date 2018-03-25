@@ -91,7 +91,7 @@ battery_check              > "$STATUS_FIFO" & BATTERY_PID=$! ; echo "battery $BA
 while read -r line ; do
 	case $line in
 		player*)
-			now_playing=$(music_status)
+			music_fmt=$(music_status)
 			;;
 		card*)
 			volume_fmt=$(get_volume)
@@ -103,5 +103,5 @@ while read -r line ; do
 			clock_fmt="${line#?}"
 			;;
 	esac
-	xsetroot -name " / $now_playing / vol:$volume_fmt / bat:$battery_fmt / $clock_fmt "
+	xsetroot -name " / $music_fmt / vol:$volume_fmt / bat:$battery_fmt / $clock_fmt "
 done < "$STATUS_FIFO"
