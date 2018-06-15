@@ -16,10 +16,9 @@ function cleanup {
 	if [[ -e $STATUS_FIFO ]] ; then
 		rm -f $STATUS_FIFO
 	fi
-	kill "$CLOCK_PID"
 	kill "$MPC_PID"
-	kill "$BATTERY_PID"
-	kill "$VOL_PID"
+	kill "$I3_PID"
+	xsetroot -name " dwm "
 }
 
 function check_dependency {
@@ -83,10 +82,8 @@ reset_fifo
 
 check_dependency clock date xsetroot mpc
 
-clock -sf 'S%a %H:%M'      > "$STATUS_FIFO" & CLOCK_PID=$!   ; echo "clock   $CLOCK_PID"
-mpc idleloop player        > "$STATUS_FIFO" & MPC_PID=$!     ; echo "mpc     $MPC_PID"
-stdbuf -oL alsactl monitor > "$STATUS_FIFO" & VOL_PID=$!     ; echo "volume  $VOL_PID"
-battery_check              > "$STATUS_FIFO" & BATTERY_PID=$! ; echo "battery $BATTERY_PID"
+mpc idleloop player > "$STATUS_FIFO" & MPC_PID=$! ; echo "mpc      $MPC_PID"
+i3status            > "$STATUS_FIFO" & I3_PID=$!  ; echo "i3status $I3_PID"
 
 while read -r line ; do
 	case $line in
@@ -102,6 +99,9 @@ while read -r line ; do
 		S*)
 			clock_fmt="${line#?}"
 			;;
+		i3*)
+			IFS='' read non vol load enp2s025 virbr0 wlp3s0 disk_root bat time <<< "$line"
+			;;
 	esac
-	xsetroot -name " / $music_fmt / vol:$volume_fmt / bat:$battery_fmt / $clock_fmt "
+	xsetroot -name "/ $enp2s025 / $wlp3s0 / $music_fmt / $vol / bat: $bat / $time "
 done < "$STATUS_FIFO"
